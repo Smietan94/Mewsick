@@ -22,8 +22,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN curl -sS https://get.symfony.com/cli/installer | bash
 RUN mv ~/.symfony5/bin/symfony /usr/local/bin/symfony
 
-RUN pecl install mongodb \
-    && docker-php-ext-enable mongodb
+# RUN pecl install mongodb \
+#     && docker-php-ext-enable mongodb
 
 RUN apt-get -y update \
     && apt-get install -y libicu-dev \

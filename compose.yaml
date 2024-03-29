@@ -19,6 +19,7 @@ services:
     volumes:
       - ./:/var/www
       - ./local.ini:/usr/local/etc/php/conf.d/local.ini
+
   nginx:
     image: nginx:1.19-alpine
     container_name: mewsick-nginx
@@ -28,20 +29,34 @@ services:
     volumes:
       - ./:/var/www
       - ./nginx:/etc/nginx/conf.d
-  mongo:
-    image: mongo
-    container_name: mewsick-db
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: app
-      MONGO_INITDB_ROOT_PASSWORD: root
-  mongo-express:
-    image: mongo-express
-    container_name: mewsickexpress-db
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: app
-      ME_CONFIG_MONGODB_ADMINPASSWORD: root
-      ME_CONFIG_MONGODB_URL: mongodb://app:root@mongo:27017/
+
+  # mongo:
+  #   image: mongo
+  #   container_name: mewsick-db
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: app
+  #     MONGO_INITDB_ROOT_PASSWORD: root
+
+  # mongo-express:
+  #   image: mongo-express
+  #   container_name: mewsickexpress-db
+  #   restart: always
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: app
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: root
+  #     ME_CONFIG_MONGODB_URL: mongodb://app:root@mongo:27017/
+
+###> symfony/mailer ###
+  # mailer:
+  #   image: axllent/mailpit
+  #   ports:
+  #     - "1025"
+  #     - "8025"
+  #   environment:
+  #     MP_SMTP_AUTH_ACCEPT_ANY: 1
+  #     MP_SMTP_AUTH_ALLOW_INSECURE: 1
+###< symfony/mailer ###
+
