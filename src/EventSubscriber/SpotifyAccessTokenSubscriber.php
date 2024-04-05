@@ -21,7 +21,7 @@ class SpotifyAccessTokenSubscriber implements EventSubscriberInterface
     public function onKernelController(ControllerEvent $event)
     {
         $session      = $event->getRequest()->getSession();
-        $access_token = $session->get('access_token');
+        $access_token = $session->get('ACCESS_TOKEN');
 
         if (!$access_token || !$this->spotifyApiService->checkIfAccessTokenIsValid($access_token)) {
             $response = new RedirectResponse(

@@ -1,3 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
     background-color: skyblue;
+}
+
+label > input + img { /* IMAGE STYLES */
+    cursor:pointer;
+    border:2px solid transparent;
+    /* transform: rotate(45deg); */
+}
+
+label > input:checked + img { /* (CHECKED) IMAGE STYLES */
+    border:2px solid #f00;
+    transform: rotate(45deg);
 }

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\DTO\SpotifyApiRequestDTO;
 use App\Entity\Const\Constant;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class SpotifyApiService
 {
@@ -45,15 +48,7 @@ class SpotifyApiService
      */
     public function getAccessToken(string $authorization_code): void
     {
-        $key     = base64_encode(sprintf(
-            '%s:%s',
-            $_ENV['SPOTIFY_API_CLIENT_ID'],
-            $_ENV['SPOTIFY_API_CLIENT_SECTRET']
-        ));
-        $headers = [
-            'Content-Type'  => Constant::CONTENT_TYPE,
-            'Authorization' => sprintf('Basic %s', $key)
-        ];
+        $headers = $this->getAccessTokenRequestHeaders();
         $body    = sprintf(
             'code=%s&redirect_uri=%s&grant_type=authorization_code',
             $authorization_code,
@@ -71,13 +66,10 @@ class SpotifyApiService
     public function refreshAccessToken(): void
     {
         $session = new Session();
-        $headers = [
-            'Content-Type' => Constant::CONTENT_TYPE
-        ];
+        $headers = $this->getAccessTokenRequestHeaders();
         $body    = sprintf(
-            'refresh_token=%s&client_id=%s&grant_type=refresh_token',
-            $session->get('refresh_token'),
-            $_ENV['SPOTIFY_API_CLIENT_ID']
+            'refresh_token=%s&grant_type=refresh_token',
+            $session->get('REFRESH_TOKEN')
         );
 
         $this->handleApiTokenRequest($headers, $body);
@@ -92,15 +84,11 @@ class SpotifyApiService
     public function checkIfAccessTokenIsValid(string $access_token): bool
     {
         try {
-            $uri     = sprintf(
-                'https://api.spotify.com/v1/artists/%s',
-                Constant::ARTIST_ID_FOR_TOKEN_VALIDATION
+            $response = $this->client->request(
+                'GET',
+                sprintf('%s/artists/%s', Constant::SPOTIFY_API_URL, Constant::ARTIST_ID_FOR_TOKEN_VALIDATION),
+                ['headers' => ['Authorization' => sprintf('Bearer %s', $access_token)]]
             );
-            $headers = [
-                'Authorization' => sprintf('Bearer %s', $access_token)
-            ];
-
-            $response = $this->client->request('GET', $uri, ['headers' => $headers]);
 
             if ($response->getStatusCode() != 200) {
                 return false;
@@ -110,7 +98,161 @@ class SpotifyApiService
 
         } catch (ClientException) {
             $this->refreshAccessToken();
+
+            return true;
         }
+    }
+
+    public function createCatPlaylist(Request $request, string $catName)
+    {
+
+    }
+
+    /**
+     * Returns array of random spotify playlists ids based on user choice
+     *
+     * @param  string $accessToken
+     * @param  string $market
+     * @param  array  $data
+     * @return string[]
+     */
+    public function getPlaylistsIds(string $accessToken, string $market, array $data): array
+    {
+        $requestData = new SpotifyApiRequestDTO(
+            'GET',
+            sprintf('%s/search?q=q', Constant::SPOTIFY_API_URL),
+            ['Authorization' => sprintf('Bearer %s', $accessToken)],
+            query: [
+                'q'      => 'midwest emo',
+                'type'   => 'playlist',
+                'market' => $market,
+                'offset' => 0,
+                'limit'  => 10
+            ]
+        );
+
+        $responseData = $this->processApiRequest($requestData);
+        $playslists   = $responseData['playlists']['items'];
+        $randomKeys   = array_rand($playslists, 3);
+
+        return array_map(fn($key) => $playslists[$key]['id'], $randomKeys);
+    }
+
+    /**
+     * Collects random tracks from provided playlist
+     *
+     * @param  mixed $playlistId
+     * @param  mixed $accessToken
+     * @param  mixed $market
+     * @return array
+     */
+    public function getTracks(string $playlistId, string $accessToken, string $market): array
+    {
+        $requestData = new SpotifyApiRequestDTO(
+            'GET',
+            sprintf('%s/playlists/%s/tracks?market=%s', Constant::SPOTIFY_API_URL, $playlistId, $market),
+            ['Authorization' => sprintf('Bearer %s', $accessToken)]
+        );
+
+        $responseData = $this->processApiRequest($requestData);
+        $tracks       = $responseData['items'];
+        $tracksKeys   = array_rand($tracks, 3);
+        dd(array_map(fn($key) => $tracks[$key]['track']['id'], $tracksKeys));
+        return array_map(fn($key) => $tracks[$key]['track']['id'], $tracksKeys);
+    }
+
+    /**
+     * Process user choice and adds tracks to created playlist
+     *
+     * @param  mixed $request
+     * @param  mixed $data
+     * @return void
+     */
+    public function addTracksToPlaylist(Request $request, array $data)
+    {
+        $session     = $request->getSession();
+        $accessToken = $session->get('ACCESS_TOKEN');
+        $market      = $session->get('API_USER_COUNTRY');
+        // $playlistId  = $session->get('CAT_PLAYLIST_ID');
+        $tracks      = [];
+
+        // process data to get query
+
+        $playlistsIds = $this->getPlaylistsIds($accessToken, $market, $data);
+
+        foreach ($playlistsIds as $playlistId) {
+            array_map(
+                fn($track) => array_push($tracks, $track),
+                $this->getTracks($playlistId, $accessToken, $market)
+            );
+        }
+
+        // TODO push tracks to catted playlist
+    }
+
+    /**
+     * Adds current user data to session 
+     *
+     * @param  Request $request
+     * @return void
+     */
+    public function processCurrentUserData(Request $request)
+    {
+        $session  = $request->getSession();
+
+        $requestData = new SpotifyApiRequestDTO(
+            'GET',
+            sprintf('%s/me', Constant::SPOTIFY_API_URL),
+            ['Authorization' => sprintf('Bearer %s', $session->get('ACCESS_TOKEN'))]
+        );
+
+        $responseData = $this->processApiRequest($requestData);
+
+        $session->set('API_USER_COUNTRY', $responseData['country']);
+        $session->set('API_USER_NAME', $responseData['display_name']);
+        $session->set('API_USER_ID', $responseData['id']);
+    }
+
+    /**
+     * Process api request
+     *
+     * @param  SpotifyApiRequestDTO $reqeustData
+     * @return array
+     */
+    public function processApiRequest(SpotifyApiRequestDTO $reqeustData): array
+    {
+        // check response code
+        $response = $this->client->request(
+            $reqeustData->method,
+            $reqeustData->url, [
+            'headers' => $reqeustData->headers,
+            'body'    => $reqeustData->body,
+            'query'   => $reqeustData->query
+        ]);
+
+        return json_decode(
+            $response->getBody()->getContents(),
+            true
+        );
+    }
+
+    /**
+     * Get headers for access token request
+     *
+     * @return array
+     */
+    private function getAccessTokenRequestHeaders(): array
+    {
+        $key     = base64_encode(sprintf(
+            '%s:%s',
+            $_ENV['SPOTIFY_API_CLIENT_ID'],
+            $_ENV['SPOTIFY_API_CLIENT_SECTRET']
+        ));
+
+        return [
+            'Content-Type'  => Constant::CONTENT_TYPE,
+            'Authorization' => sprintf('Basic %s', $key)
+        ];
     }
 
     /**
@@ -122,7 +264,9 @@ class SpotifyApiService
      */
     private function handleApiTokenRequest(array $headers, string $body)
     {
-        $response = $this->client->request('POST', Constant::ACCESS_TOKEN_URL, [
+        $response = $this->client->request(
+            'POST',
+            Constant::ACCESS_TOKEN_URL, [
             'headers' => $headers,
             'body'    => $body
         ]);
@@ -131,7 +275,7 @@ class SpotifyApiService
     }
 
     /**
-     * Adds values to session
+     * Adds api token access and refresh token values to session
      *
      * @param  mixed $response
      * @return void
@@ -145,7 +289,10 @@ class SpotifyApiService
             true
         );
 
-        $session->set('access_token', $responseData['access_token']);
-        $session->set('refresh_token', $responseData['refresh_token']);
+        $session->set('ACCESS_TOKEN', $responseData['access_token']);
+
+        if (isset($responseData['refresh_token'])) {
+            $session->set('REFRESH_TOKEN', $responseData['refresh_token']);
+        }
     }
 }

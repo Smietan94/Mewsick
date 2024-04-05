@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    What's Your cat's name?
+{% endblock %}
+
+{% block body %}
+
+<div class="example-wrapper">
+
+    {{ form_start(form) }}
+        {{ form_widget(form.cat_name) }}
+        {{ form_widget(form.submit) }}
+    {{ form_end(form) }}
+
+</div>
+
+{% endblock %}
