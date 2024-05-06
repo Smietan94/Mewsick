@@ -8,6 +8,8 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "guzzlehttp/guzzle": "^7.0",
+        "league/flysystem-bundle": "^3.3",
+        "liip/imagine-bundle": "^2.12",
         "php-cs-fixer/shim": "^3.52",
         "phpdocumentor/reflection-docblock": "^5.3",
         "phpstan/phpdoc-parser": "^1.27",

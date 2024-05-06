@@ -14,6 +14,7 @@ class RoutePath
     public const CHOOSE_YOUR_FIGHTER     = '/chooseYourFighter';
     public const CHOOSE_CAT_COLOR        = '/catColor';
     public const CHOOSE_CAT_HAT          = '/catHat';
+    public const CHOOSE_CAT_BAG          = '/catBag';
     public const CHOOSE_CAT_HOBBY        = '/catHobby';
     public const CHOOSE_CAT_BACKGROUND   = '/catBackground';
     public const CAT_REVEAL              = '/catReveal';

@@ -6,12 +6,39 @@
 
 {% block body %}
 
-<div class="example-wrapper">
-    <h1 class="text-3xl my-5">Hello {{ controller_name }}! ✅</h1>
+<div class="container mx-auto py-5">
 
-    <a href="{{ path(get_route_name('APP_CREATE_SPOTIFY_PLAYLIST')) }}" class="mx-5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-        Let's go
-    </a>
+    <div class="md:container ms-10 md:mx-auto">
+
+        <div class="text-6xl md:text-9xl">
+            <p class="flex">
+                <img
+                src="{{ asset('images/logo/mewsick_logo_red.png') }}"
+                class="my-auto inline h-12 md:h-32 rotate-[-15deg]"
+                alt="Mewsick logo"
+                />
+                ewsick
+            </p>
+            <p class="ms-8 md:ms-16">playlist</p>
+            <p class="ms-8 md:ms-16">maker</p>
+        </div>
+
+        <a href="{{ path(get_route_name('APP_CREATE_SPOTIFY_PLAYLIST')) }}"
+            class="
+                transition-all duration-150
+                text-[#EFF0D1] font-medium text-4xl md:text-7xl
+                inline-block
+                bg-[#77BA99]
+                border-b-8 md:border-b-12 border-[#262730] focus:border-b-0.5
+                focus:translate-y-2 focus:md:translate-y-3
+                rounded-full
+                ms-8 md:ms-16 mt-5 md:mt-10 px-20 md:px-28 py-4 md:py-5
+            ">
+            let's go!
+        </a>
+
+    </div>
 
 </div>
+
 {% endblock %}

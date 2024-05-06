@@ -1,0 +1,28 @@
+<ul class="font-medium flex">
+    <li class="me-2">
+        <button onClick="window.history.back();"
+        class="
+            transition-all duration-300
+            text-sm sm:text-base md:text-xl text-[#EFF0D1] font-medium
+            bg-[#D33F49] hover:ring-2 hover:ring-[#D33F49] focus:ring-4 focus:ring-[#D33F49]
+            rounded-full
+            py-2 px-5 sm:px-6 md:px-9
+        ">
+            back
+        </button>
+    </li>
+
+    <li>
+        <a href="{{ path(get_route_name('APP_START')) }}"
+        class="
+            transition-all duration-300
+            inline-block
+            text-sm sm:text-base md:text-xl text-[#EFF0D1] font-medium
+            bg-[#77BA99] hover:ring-2 hover:ring-[#77BA99] focus:ring-4 focus:ring-[#77BA99]
+            rounded-full
+            py-2 px-5 sm:px-6 md:px-9
+        ">
+            restart
+        </a>
+    </li>
+</ul>

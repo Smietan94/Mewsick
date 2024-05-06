@@ -6,12 +6,12 @@ namespace App\Service;
 
 use App\DTO\SpotifyApiRequestDTO;
 use App\Entity\Const\Constant;
+use App\Enum\CatType;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class SpotifyApiService
 {
@@ -103,9 +103,56 @@ class SpotifyApiService
         }
     }
 
+    /**
+     * Process cat type choice to sample length which is use to set playlist lenght
+     *
+     * @param  Request $request
+     * @param  array   $data
+     * @return void
+     */
+    public function processCatTypeChoice(Request $request, array $data): void
+    {
+        $session      = $request->getSession();
+        $catType      = (int) $data['elements']->value;
+        $sampleLength = CatType::tryFrom($catType)->toSampleLength();
+
+        $session->set('SAMPLE_LENGTH', $sampleLength);
+        $session->set('CAT_TYPE', $catType);
+    }
+
+    /**
+     * Creates new spotify playlis
+     *
+     * @param  Request $request
+     * @param  string  $catName
+     * @return void
+     */
     public function createCatPlaylist(Request $request, string $catName)
     {
+        $session     = $request->getSession();
+        $accessToken = $session->get('ACCESS_TOKEN');
+        $userId      = $session->get('API_USER_ID');
+        $username    = $session->get('API_USER_NAME');
 
+        $body = [
+            'name'        => sprintf('Mewsick playlist by %s', $catName),
+            'description' => sprintf('Playlist created by %s with %s in mind', $catName, $username),
+            'public'      => true
+        ];
+
+        $requestData = new SpotifyApiRequestDTO(
+            'POST',
+            sprintf('%s/users/%s/playlists', Constant::SPOTIFY_API_URL, $userId),
+            [
+                'Authorization' => sprintf('Bearer %s', $accessToken),
+                'Content-Type'  => 'application/json'
+            ],
+            json_encode($body)
+        );
+
+        $responseData = $this->processApiRequest($requestData);
+
+        $session->set('CAT_PLAYLIST_ID', $responseData['id']);
     }
 
     /**
@@ -113,21 +160,22 @@ class SpotifyApiService
      *
      * @param  string $accessToken
      * @param  string $market
-     * @param  array  $data
+     * @param  string $query
      * @return string[]
      */
-    public function getPlaylistsIds(string $accessToken, string $market, array $data): array
+    public function getPlaylistsIds(string $accessToken, string $market, string $query = 'midwest emo'): array
     {
         $requestData = new SpotifyApiRequestDTO(
             'GET',
             sprintf('%s/search?q=q', Constant::SPOTIFY_API_URL),
             ['Authorization' => sprintf('Bearer %s', $accessToken)],
             query: [
-                'q'      => 'midwest emo',
+                // TODO PROCESS DATA
+                'q'      => $query,
                 'type'   => 'playlist',
                 'market' => $market,
                 'offset' => 0,
-                'limit'  => 10
+                'limit'  => 15
             ]
         );
 
@@ -141,12 +189,13 @@ class SpotifyApiService
     /**
      * Collects random tracks from provided playlist
      *
-     * @param  mixed $playlistId
-     * @param  mixed $accessToken
-     * @param  mixed $market
+     * @param  string $playlistId
+     * @param  string $accessToken
+     * @param  string $market
+     * @param  int    $sampleLength
      * @return array
      */
-    public function getTracks(string $playlistId, string $accessToken, string $market): array
+    public function getTracks(string $playlistId, string $accessToken, string $market, int $sampleLength): array
     {
         $requestData = new SpotifyApiRequestDTO(
             'GET',
@@ -156,38 +205,65 @@ class SpotifyApiService
 
         $responseData = $this->processApiRequest($requestData);
         $tracks       = $responseData['items'];
-        $tracksKeys   = array_rand($tracks, 3);
-        dd(array_map(fn($key) => $tracks[$key]['track']['id'], $tracksKeys));
-        return array_map(fn($key) => $tracks[$key]['track']['id'], $tracksKeys);
+        $tracksKeys   = array_rand($tracks, $sampleLength);
+
+        return array_map(fn($key) => $tracks[$key]['track']['uri'], $tracksKeys);
     }
 
     /**
      * Process user choice and adds tracks to created playlist
      *
-     * @param  mixed $request
-     * @param  mixed $data
+     * @param  Request $request
+     * @param  string  $data
      * @return void
      */
-    public function addTracksToPlaylist(Request $request, array $data)
+    public function addTracksToPlaylist(Request $request, string $query)
     {
-        $session     = $request->getSession();
-        $accessToken = $session->get('ACCESS_TOKEN');
-        $market      = $session->get('API_USER_COUNTRY');
-        // $playlistId  = $session->get('CAT_PLAYLIST_ID');
-        $tracks      = [];
+        $session        = $request->getSession();
+        $accessToken    = $session->get('ACCESS_TOKEN');
+        $market         = $session->get('API_USER_COUNTRY');
+        $catPlaylistId  = $session->get('CAT_PLAYLIST_ID');
+        $sampleLenght   = $session->get('SAMPLE_LENGTH');
+        $tracks         = [];
 
-        // process data to get query
-
-        $playlistsIds = $this->getPlaylistsIds($accessToken, $market, $data);
+        $playlistsIds = $this->getPlaylistsIds($accessToken, $market, $query);
 
         foreach ($playlistsIds as $playlistId) {
-            array_map(
-                fn($track) => array_push($tracks, $track),
-                $this->getTracks($playlistId, $accessToken, $market)
-            );
+            foreach ($this->getTracks($playlistId, $accessToken, $market, $sampleLenght) as $track) {
+                array_push($tracks, $track);
+            }
         }
 
         // TODO push tracks to catted playlist
+        $this->updatePlaylistItems($accessToken, $catPlaylistId, $tracks);
+    }
+
+    /**
+     * adds new tracks to cat's playlist
+     *
+     * @param  string $accessToken
+     * @param  string $playlistId
+     * @param  array  $tracks
+     * @return void
+     */
+    public function updatePlaylistItems(string $accessToken, string $playlistId, array $tracks)
+    {
+        $body = [
+            'uris'     => $tracks,
+            'position' => 0
+        ];
+
+        $requestData = new SpotifyApiRequestDTO(
+            'POST',
+            sprintf('%s/playlists/%s/tracks', Constant::SPOTIFY_API_URL, $playlistId),
+            [
+                'Authorization' => sprintf('Bearer %s', $accessToken),
+                'Content-Type'  => 'application/json'
+            ],
+            json_encode($body)
+        );
+
+        $this->processApiRequest($requestData);
     }
 
     /**

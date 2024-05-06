@@ -1,0 +1,13 @@
+<div class="
+        text-[#EFF0D1] font-medium text-3xl md:text-5xl lg:text-6xl
+        inline-block
+        bg-[#77BA99]
+        border-b-8 md:border-b-12 border-[#262730]
+        rounded-r-full
+        mb-5 md:mb-10 mt-5 md:mt-10 px-20 md:px-28 py-4 md:py-5">
+    {% if pill_text is defined %}
+        {{ pill_text }}
+    {% elseif subject is defined %}
+        choose a {{ subject }}
+    {% endif %}
+</div>

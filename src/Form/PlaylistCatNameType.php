@@ -14,7 +14,7 @@ class PlaylistCatNameType extends AbstractType
     {
         $builder
             ->add('cat_name', TextType::class)
-            ->add('submit', SubmitType::class)
+            ->add('submit', SubmitType::class, ['label' => 'next step'])
         ;
     }
 

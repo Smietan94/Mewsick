@@ -12,6 +12,7 @@ class RouteName
     public const APP_CHOOSE_YOUR_FIGHTER     = 'app_choose_your_fighter';
     public const APP_CHOOSE_CAT_COLOR        = 'app_choose_cat_color';
     public const APP_CHOOSE_CAT_HAT          = 'app_choose_cat_hat';
+    public const APP_CHOOSE_CAT_BAG          = 'app_choose_cat_bag';
     public const APP_CHOOSE_CAT_HOBBY        = 'app_choose_cat_hobby';
     public const APP_CHOOSE_CAT_BACKGROUND   = 'app_choose_cat_background';
     public const APP_CAT_REVEAL              = 'app_cat_reveal';

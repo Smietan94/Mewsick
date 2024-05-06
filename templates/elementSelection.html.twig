@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Choose a {{ subject }}
+{% endblock %}
+
+{% block nav_buttons %}
+    {% include '_navButtons.html.twig' %}
+{% endblock %}
+
+{% block pill %}
+    {% include '_pill.html.twig' %}
+{% endblock %}
+
+{% block body %}
+
+    {{ form_start(form, {'attr': {'class': 'mb-10'}}) }}
+
+    <div class="my-12 xl:mt-5 xl:mb-12 px-12 sm:px-20 container mx-auto max-w-screen-lg grid-cols-2 grid md:grid-cols-3 gap-4 lg:gap-10">
+
+        {% set catType = get_cat_type_dir_prefix(app.session.get('CAT_TYPE')) %}
+        {% set image_dir_name = get_image_dir_path(catType, subject) %}
+
+        {% for key, element in form.elements %}
+
+            {% set cat_element_name = get_cat_element_name(key, subject) %}
+
+            <label class="element-label cursor-pointer justify-self-center transition hover:scale-110 hover:z-50">
+                {{ form_widget(element, {'attr': {'class': 'hidden peer'}}) }}
+                <div class="element bg-white border shadow transition
+                    peer-checked:rotate-12 peer-checked:scale-110
+                    peer-checked:shadow-2xl">
+                    <img
+                    src="{{ asset( image_dir_name ~ cat_element_name ~ '.png' )|imagine_filter('element_thumb') }}"
+                    alt="{{ cat_element_name }}"
+                    class="border-4 sm:border-6 md:border-4 lg:border-6 border-white">
+                    <div class="p-5 sm:p-7 md:p-5 lg:p-7"></div>
+                </div>
+            </label>
+
+        {% endfor %}
+
+    </div>
+
+    <div class="flex justify-end px-4 mb-10">
+        {{ form_widget(form.submit, {'attr': {
+            'class': "
+            transition-all duration-150
+            justify-end
+            text-[#EFF0D1] font-medium text-sm md:text-xl
+            inline-block
+            bg-[#77BA99]
+            border-b-6 md:border-b-8 border-[#262730] focus:border-b-0.5
+            focus:translate-y-1 focus:md:translate-y-2 focus:mb-1 focus:md:mb-2
+            rounded-full
+            ms-8 md:ms-16 mt-5 md:mt-10 px-5 md:px-8 py-2
+            "
+        }}) }}
+    </div>
+
+    {{ form_end(form) }}
+
+{% endblock %}
+

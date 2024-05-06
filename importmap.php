@@ -39,4 +39,11 @@ return [
         'version' => '6.5.1',
         'type' => 'css',
     ],
+    'flowbite' => [
+        'version' => '2.3.0',
+    ],
+    'flowbite/dist/flowbite.min.css' => [
+        'version' => '2.3.0',
+        'type' => 'css',
+    ],
 ];

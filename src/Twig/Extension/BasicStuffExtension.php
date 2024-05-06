@@ -23,6 +23,10 @@ class BasicStuffExtension extends AbstractExtension
     {
         return [
             new TwigFunction('get_route_name', [BasicStuffExtensionRuntime::class, 'getRouteName']),
+            new TwigFunction('get_cat_type', [BasicStuffExtensionRuntime::class, 'getCatType']),
+            new TwigFunction('get_cat_type_dir_prefix', [BasicStuffExtensionRuntime::class, 'getCatTypeDirPrefix']),
+            new TwigFunction('get_cat_element_name', [BasicStuffExtensionRuntime::class, 'getCatElementName']),
+            new TwigFunction('get_image_dir_path', [BasicStuffExtensionRuntime::class, 'getImageDirPath'])
         ];
     }
 }

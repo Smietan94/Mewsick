@@ -6,8 +6,16 @@ namespace App\Controller;
 
 use App\Entity\Const\RouteName;
 use App\Entity\Const\RoutePath;
+use App\Enum\CatColor;
+use App\Enum\CatHat;
+use App\Enum\CatType;
+use App\Form\CatColorType;
+use App\Form\CatElementChoiceType;
 use App\Form\ChooseFighterType;
 use App\Form\PlaylistCatNameType;
+use App\Service\DataService;
+use App\Service\FileService;
+use App\Service\FormService;
 use App\Service\SpotifyApiService;
 use GuzzleHttp\Exception\ClientException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +27,10 @@ use Symfony\Component\Routing\Attribute\Route;
 class SpotifyApiController extends AbstractController
 {
     public function __construct(
-        private SpotifyApiService $spotifyApiService
+        private SpotifyApiService $spotifyApiService,
+        private FormService       $formService,
+        private DataService       $dataService,
+        private FileService       $fileService
     ) {
     }
 
@@ -59,7 +70,9 @@ class SpotifyApiController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
+            // dd($data);
             // TODO create service method which will create new playlist
+            // $this->spotifyApiService->createCatPlaylist($request, $data['cat_name']);
 
             return $this->redirectToRoute(RouteName::APP_CHOOSE_YOUR_FIGHTER);
         }
@@ -72,29 +85,72 @@ class SpotifyApiController extends AbstractController
     #[Route(path: RoutePath::CHOOSE_YOUR_FIGHTER, name: RouteName::APP_CHOOSE_YOUR_FIGHTER)]
     public function chooseYourCat(Request $request): Response
     {
-        // TODO create form with cat type
-        $form = $this->createForm(ChooseFighterType::class);
+        $form = $this->formService->createElementChoiceForm(CatType::cases());
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $this->spotifyApiService->addTracksToPlaylist($request, $data);
+
+            $this->spotifyApiService->processCatTypeChoice($request, $data);
+
+            return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_COLOR);
         }
 
-        return $this->render('choseYourFighter.html.twig', [
-            'form' => $form
+        return $this->render('chooseYourFighter.html.twig', [
+            'pill_text' => 'choose your fighter',
+            'subject'   => 'type',
+            'form'      => $form
         ]);
     }
 
     #[Route(path: RoutePath::CHOOSE_CAT_COLOR, name: RouteName::APP_CHOOSE_CAT_COLOR)]
     public function chooseCatColor(Request $request): Response
     {
-        return $this->render('');
+        $form = $this->formService->createElementChoiceForm(CatColor::cases());
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data  = $form->getData();
+            $color = $this->dataService->getCatElementValue($data);
+
+            $request->getSession()->set('COLOR', $color);
+
+            // $this->spotifyApiService->addTracksToPlaylist($request, CatColor::tryFrom($color)->toQuery());
+            return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_HAT);
+        }
+
+        return $this->render('elementSelection.html.twig', [
+            'subject' => 'color',
+            'form'    => $form,
+        ]);
     }
 
     #[Route(path: RoutePath::CHOOSE_CAT_HAT, name: RouteName::APP_CHOOSE_CAT_HAT)]
     public function chooseCatHat(Request $request): Response
+    {
+        $form = $this->formService->createElementChoiceForm(CatHat::cases());
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            $hat  = $this->dataService->getCatElementValue($data);
+
+            $request->getSession()->set('HAT', $hat);
+
+            $this->fileService->combineLayers($request);
+        }
+
+        return $this->render('elementSelection.html.twig', [
+            'subject' => 'hat',
+            'form'    => $form,
+        ]);
+    }
+
+    #[Route(path: RoutePath::CHOOSE_CAT_BAG, name: RouteName::APP_CHOOSE_CAT_BAG)]
+    public function chooseCatBag(Request $request): Response
     {
         return $this->render('');
     }

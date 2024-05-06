@@ -12,7 +12,12 @@ class Constant
         'user-read-private',
         'user-read-email',
         'playlist-modify-public',
-        'user-top-read'
+        'playlist-modify-private',
+        'playlist-read-private',
+        'playlist-read-collaborative',
+        'user-top-read',
+        'user-library-modify',
+        'ugc-image-upload'
     ];
     public const REDIRECT_URI = 'http://127.0.0.1:8000/';
 

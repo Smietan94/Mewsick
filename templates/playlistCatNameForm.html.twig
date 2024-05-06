@@ -4,15 +4,51 @@
     What's Your cat's name?
 {% endblock %}
 
+{% block nav_buttons %}
+    {% include '_navButtons.html.twig' %}
+{% endblock %}
+
+{% block pill %}
+    <div class="container mx-auto flex justify-center">
+        <div class="
+            text-[#EFF0D1] font-medium text-xl sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl
+            inline-block
+            bg-[#77BA99]
+            border-b-8 md:border-b-12 border-[#262730]
+            rounded-full
+            mb-5 md:mb-10 mt-5 md:mt-10 px-20 md:px-28 py-4 md:py-5">
+            what's the name of your cat-friend?
+        </div>
+    </div>
+{% endblock %}
+
 {% block body %}
 
-<div class="example-wrapper">
-
     {{ form_start(form) }}
-        {{ form_widget(form.cat_name) }}
-        {{ form_widget(form.submit) }}
-    {{ form_end(form) }}
+        <div class="flex justify-center my-5 md:my-10">
+            {{ form_widget(form.cat_name, {'attr': {
+                'class': "
+                bg-[#D33F49]
+                text-[#EFF0D1] text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-center
+                rounded-full border-0 w-screen-sm
+                "
+            }}) }}
+        </div>
 
-</div>
+        <div class="flex justify-end px-4 mb-10">
+            {{ form_widget(form.submit, {'attr': {
+                'class': "
+                transition-all duration-150
+                text-[#EFF0D1] font-medium text-sm md:text-xl
+                inline-block
+                bg-[#77BA99]
+                focus:translate-y-1 focus:md:translate-y-2
+                border-b-6 md:border-b-8 border-[#262730] focus:border-b-0.5
+                rounded-full
+                ms-8 md:ms-16 mt-5 md:mt-10 px-5 md:px-8 py-2 md:py-4
+                "
+            }}) }}
+        </div>
+    {{ form_end(form) }}
 
 {% endblock %}

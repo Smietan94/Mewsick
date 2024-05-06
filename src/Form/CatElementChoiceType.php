@@ -2,22 +2,24 @@
 
 namespace App\Form;
 
+use App\Enum\CatColor;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\RadioType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class ChooseFighterType extends AbstractType
+class CatElementChoiceType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('smol', RadioType::class)
-            ->add('big_long', RadioType::class)
-            ->add('big_potat', RadioType::class)
-            ->add('old', RadioType::class)
-            ->add('submit', SubmitType::class)
+            ->add('elements', ChoiceType::class, [
+                'choices'  => $options['choices'],
+                'expanded' => true,
+                'multiple' => false
+            ])
+            ->add('submit', SubmitType::class, ['label' => 'next step'])
         ;
     }
 
@@ -25,6 +27,7 @@ class ChooseFighterType extends AbstractType
     {
         $resolver->setDefaults([
             // Configure your form options here
+            'choices' => []
         ]);
     }
 }

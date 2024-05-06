@@ -1,18 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Just+Another+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Itim&family=Just+Another+Hand&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-    background-color: skyblue;
+    background-color: #EFF0D1;
 }
 
-label > input + img { /* IMAGE STYLES */
-    cursor:pointer;
-    border:2px solid transparent;
-    /* transform: rotate(45deg); */
-}
-
-label > input:checked + img { /* (CHECKED) IMAGE STYLES */
-    border:2px solid #f00;
-    transform: rotate(45deg);
+@layer components {
+    .element-label:has(input:checked),
+    .fighter-label:has(input:checked) {
+        @apply z-40;
+    }
 }

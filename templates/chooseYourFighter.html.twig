@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Choose Your Fighter
+{% endblock %}
+
+{% block nav_buttons %}
+    {% include '_navButtons.html.twig' %}
+{% endblock %}
+
+{% block pill %}
+    {% include '_pill.html.twig' %}
+{% endblock %}
+
+{% block body %}
+    {{ form_start(form) }}
+    <div class="my-12 xl:mt-5 xl:mb-12 px-16 sm:px-24 md:px-4 lg:px-16 mx-auto max-w-screen-xl grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-10">
+
+    {% set img_class = [
+        'rotate-[10deg] md:translate-x-[100px] peer-checked:rotate-[-10deg]',
+        'rotate-[-3deg] translate-y-12 md:translate-x-[50px] peer-checked:rotate-12',
+        'rotate-[-10deg] translate-y-[-50px] md:translate-x-[-50px] peer-checked:rotate-[7deg]',
+        'rotate-[20deg] md:translate-x-[-100px] peer-checked:rotate-[3deg]'
+    ] %}
+
+        {% for key, fighter in form.elements %}
+
+        {% set cat_type = get_cat_type(key) %}
+
+            <label class="transition-all duration-300 fighter-label cursor-pointer justify-self-center hover:scale-110 hover:z-50">
+                    {# lg:[:hover_+_&]:translate-x-[100px] lg:[&:has(~:hover)]:translate-x-[-100px]"> #}
+                {{ form_widget(fighter, {'attr': {'class': 'hidden peer'}}) }}
+                <div class="
+                    transition-all duration-150
+                    border-4 sm:border-6 md:border-4 lg:border-6 border-white
+                    fighter bg-white shadow
+                    peer-checked:scale-110
+                    peer-checked:shadow-[0_35px_40px_-10px_rgba(0,0,0,0.3)] peer-checked:shadow-[#262730]-200
+                    {{ img_class[key] }}">
+                    <img
+                    src="{{ asset('images/cat_type/'~ get_cat_element_name(key, subject) ~ '.png')|imagine_filter('fighter_thumb') }}"
+                    alt="{{ cat_type }}">
+                    <div class="p-1 sm:p-2 md:p-1 lg:p-2 flex justify-center">
+                    <p class="font-handwritten text-2xl sm:text-3xl md:text-4xl xl:text-5xl rotate-12">{{ cat_type }}</p>
+                    </div>
+                </div>
+            </label>
+
+        {% endfor %}
+
+    </div>
+
+    <div class="flex justify-end px-4 mb-10">
+        {{ form_widget(form.submit, {'attr': {
+            'class': "
+            transition-all duration-150
+            justify-end
+            text-[#EFF0D1] font-medium text-sm md:text-xl
+            inline-block
+            bg-[#77BA99]
+            border-b-6 md:border-b-8 border-[#262730] focus:border-b-0.5
+            focus:translate-y-1 focus:md:translate-y-2 focus:mb-2
+            rounded-full
+            ms-8 md:ms-16 mt-5 md:mt-10 px-5 md:px-8 py-2
+            "
+        }}) }}
+    </div>
+    {{ form_end(form) }}
+{% endblock %}
