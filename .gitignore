@@ -34,3 +34,7 @@ notes.md
 ###> liip/imagine-bundle ###
 /public/media/cache/
 ###< liip/imagine-bundle ###
+
+/public/images/cats/playlist_cover/*.jpg
+/public/images/cats/playlist_cover_download/*.jpg
+

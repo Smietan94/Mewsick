@@ -13,6 +13,5 @@ class SpotifyApiRequestDTO
         public readonly ?string $body  = null,
         public readonly ?array  $query = null
     ) {
-
     }
 }

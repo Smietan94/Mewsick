@@ -18,8 +18,12 @@
 
     <div class="my-12 xl:mt-5 xl:mb-12 px-12 sm:px-20 container mx-auto max-w-screen-lg grid-cols-2 grid md:grid-cols-3 gap-4 lg:gap-10">
 
-        {% set catType = get_cat_type_dir_prefix(app.session.get('CAT_TYPE')) %}
-        {% set image_dir_name = get_image_dir_path(catType, subject) %}
+        {% if subject == 'background' %}
+            {% set image_dir_name = get_image_dir_path(subject) %}
+        {% else %}
+            {% set catType = get_cat_type_dir_prefix(app.session.get('CAT_TYPE')) %}
+            {% set image_dir_name = get_image_dir_path(subject, catType) %}
+        {% endif %}
 
         {% for key, element in form.elements %}
 

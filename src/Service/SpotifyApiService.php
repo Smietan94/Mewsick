@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\DTO\SpotifyApiRequestDTO;
+use App\DTO\SpotifyPlaylistDTO;
 use App\Entity\Const\Constant;
 use App\Enum\CatType;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -17,8 +20,9 @@ class SpotifyApiService
 {
     private Client $client;
 
-    public function __construct()
-    {
+    public function __construct(
+        private FileService $fileService
+    ) {
         $this->client = new Client();
     }
 
@@ -127,7 +131,7 @@ class SpotifyApiService
      * @param  string  $catName
      * @return void
      */
-    public function createCatPlaylist(Request $request, string $catName)
+    public function createCatPlaylist(Request $request, string $catName): void
     {
         $session     = $request->getSession();
         $accessToken = $session->get('ACCESS_TOKEN');
@@ -135,7 +139,7 @@ class SpotifyApiService
         $username    = $session->get('API_USER_NAME');
 
         $body = [
-            'name'        => sprintf('Mewsick playlist by %s', $catName),
+            'name'        => sprintf('%s %s', Constant::SPOTIFY_PLAYLIST_PREFIX, $catName),
             'description' => sprintf('Playlist created by %s with %s in mind', $catName, $username),
             'public'      => true
         ];
@@ -153,6 +157,7 @@ class SpotifyApiService
         $responseData = $this->processApiRequest($requestData);
 
         $session->set('CAT_PLAYLIST_ID', $responseData['id']);
+        $session->set('CAT_NAME', $catName);
     }
 
     /**
@@ -211,13 +216,35 @@ class SpotifyApiService
     }
 
     /**
+     * collects all playlists created with this app
+     *
+     * @param  Request $request
+     * @return array
+     */
+    public function getMewsickPlaylists(Request $request): array
+    {
+        $session     = $request->getSession();
+        $accessToken = $session->get('ACCESS_TOKEN');
+
+        $requestData = new SpotifyApiRequestDTO(
+            'GET',
+            sprintf('%s/me/playlists', Constant::SPOTIFY_API_URL),
+            ['Authorization' => sprintf('Bearer %s', $accessToken)]
+        );
+
+        $result = $this->processApiRequest($requestData);
+
+        return $this->processUserPlaylists($result);
+    }
+
+    /**
      * Process user choice and adds tracks to created playlist
      *
      * @param  Request $request
      * @param  string  $data
      * @return void
      */
-    public function addTracksToPlaylist(Request $request, string $query)
+    public function addTracksToPlaylist(Request $request, string $query): void
     {
         $session        = $request->getSession();
         $accessToken    = $session->get('ACCESS_TOKEN');
@@ -246,7 +273,7 @@ class SpotifyApiService
      * @param  array  $tracks
      * @return void
      */
-    public function updatePlaylistItems(string $accessToken, string $playlistId, array $tracks)
+    public function updatePlaylistItems(string $accessToken, string $playlistId, array $tracks): void
     {
         $body = [
             'uris'     => $tracks,
@@ -272,7 +299,7 @@ class SpotifyApiService
      * @param  Request $request
      * @return void
      */
-    public function processCurrentUserData(Request $request)
+    public function processCurrentUserData(Request $request): void
     {
         $session  = $request->getSession();
 
@@ -295,21 +322,79 @@ class SpotifyApiService
      * @param  SpotifyApiRequestDTO $reqeustData
      * @return array
      */
-    public function processApiRequest(SpotifyApiRequestDTO $reqeustData): array
+    public function processApiRequest(SpotifyApiRequestDTO $reqeustData): ?array
     {
-        // check response code
-        $response = $this->client->request(
-            $reqeustData->method,
-            $reqeustData->url, [
-            'headers' => $reqeustData->headers,
-            'body'    => $reqeustData->body,
-            'query'   => $reqeustData->query
-        ]);
+        try {
+            // check response code
+            $response = $this->client->request(
+                $reqeustData->method,
+                $reqeustData->url, [
+                'headers' => $reqeustData->headers,
+                'body'    => $reqeustData->body,
+                'query'   => $reqeustData->query
+            ]);
 
-        return json_decode(
-            $response->getBody()->getContents(),
-            true
+            return json_decode(
+                $response->getBody()->getContents(),
+                true
+            );
+
+        } catch (RequestException $e) {
+            throw new RequestException(
+                $e->getMessage(),
+                $e->getRequest(),
+                $e->getResponse()
+            );
+        } catch (ConnectException $e) {
+            throw new ConnectException(
+                $e->getMessage(),
+                $e->getRequest()
+            );
+        }
+    }
+
+    public function updatePlaylistCoverPhoto(Request $request): void
+    {
+        $session       = $request->getSession();
+        $catPhotoName  = $session->get('CAT_PHOTO_NAME');
+        $accessToken   = $session->get('ACCESS_TOKEN');
+        $catPlaylistId = $session->get('CAT_PLAYLIST_ID');
+
+        $photoPath = sprintf('images/cats/playlist_cover/%s.jpg', $catPhotoName);
+        $data      = file_get_contents($photoPath);
+        $body      = base64_encode($data);
+
+        $requestData  = new SpotifyApiRequestDTO(
+            'PUT',
+            sprintf('%s/playlists/%s/images', Constant::SPOTIFY_API_URL, $catPlaylistId),
+            [
+                'Authorization' => sprintf('Bearer %s', $accessToken),
+                'Content-Type'  => 'image/jpeg'
+            ],
+            $body
         );
+
+        $this->processApiRequest($requestData);
+
+        $this->fileService->removeCoverPhoto($catPhotoName);
+    }
+
+    public function getPlaylistUrl(Request $request): string
+    {
+        $session     = $request->getSession();
+        $playlistId  = $session->get('CAT_PLAYLIST_ID');
+        $accessToken = $session->get('ACCESS_TOKEN');
+        $market      = $session->get('API_USER_COUNTRY');
+
+        $requestData = new SpotifyApiRequestDTO(
+            'GET',
+            sprintf('%s/playlists/%s?market=%s', Constant::SPOTIFY_API_URL, $playlistId, $market),
+            ['Authorization' => sprintf('Bearer %s', $accessToken)]
+        );
+
+        $response = $this->processApiRequest($requestData);
+
+        return $response['external_urls']['spotify'];
     }
 
     /**
@@ -319,7 +404,7 @@ class SpotifyApiService
      */
     private function getAccessTokenRequestHeaders(): array
     {
-        $key     = base64_encode(sprintf(
+        $key = base64_encode(sprintf(
             '%s:%s',
             $_ENV['SPOTIFY_API_CLIENT_ID'],
             $_ENV['SPOTIFY_API_CLIENT_SECTRET']
@@ -338,7 +423,7 @@ class SpotifyApiService
      * @param  string $body
      * @return void
      */
-    private function handleApiTokenRequest(array $headers, string $body)
+    private function handleApiTokenRequest(array $headers, string $body): void
     {
         $response = $this->client->request(
             'POST',
@@ -356,7 +441,7 @@ class SpotifyApiService
      * @param  mixed $response
      * @return void
      */
-    private function processSessionValues(ResponseInterface $response)
+    private function processSessionValues(ResponseInterface $response): void
     {
         $session = new Session();
 
@@ -370,5 +455,40 @@ class SpotifyApiService
         if (isset($responseData['refresh_token'])) {
             $session->set('REFRESH_TOKEN', $responseData['refresh_token']);
         }
+    }
+
+    /**
+     * filters request response to collect only playlists created with this app
+     *
+     * @param  array $requestResult
+     * @return array
+     */
+    private function processUserPlaylists(array $requestResult): array
+    {
+        $playlistNamePrefix = Constant::SPOTIFY_PLAYLIST_PREFIX;
+
+        return array_filter(array_map(
+            fn($playlist) => str_starts_with($playlist['name'], $playlistNamePrefix) ? $this->processUserPlaylistData($playlist) : null,
+            $requestResult['items']
+        ));
+    }
+
+    /**
+     * process playlist data and returns only needed data
+     *
+     * @param  array $playlist
+     * @return SpotifyPlaylistDTO
+     */
+    private function processUserPlaylistData(array $playlist): SpotifyPlaylistDTO
+    {
+        $offset = strlen(Constant::SPOTIFY_PLAYLIST_PREFIX) + 1;
+
+        return new SpotifyPlaylistDTO(
+            substr($playlist['name'], $offset),
+            $playlist['name'],
+            $playlist['description'],
+            $playlist['images'][0]['url'],
+            $playlist['uri']
+        );
     }
 }

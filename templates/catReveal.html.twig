@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Say hello to {{ cat_name }}!
+{% endblock %}
+
+{% block nav_buttons %}
+    {% include '_homeButton.html.twig' %}
+{% endblock %}
+
+{% block pill %}
+    {% include '_pill.html.twig' %}
+{% endblock %}
+
+{% block body %}
+    <div class="px-14 mt-5">
+        <div class="transition-all duration-1000 xl:mt-5 xl:mb-12 px-16 sm:px-24 md:px-4 lg:px-16 mx-auto max-w-screen-sm grid rotate-[10deg] hover:rotate-[-12deg]">
+            <div class="element bg-white border shadow transition my-10">
+                <img
+                src="{{ asset( cat_photo_path )|imagine_filter('cat_reveal_photo') }}"
+                alt="{{ cat_name ~ '_photography' }}"
+                class="border-4 sm:border-6 md:border-4 lg:border-6 border-white">
+
+                <div class="p-1 sm:p-2 md:p-1 lg:p-2 flex justify-center">
+                    <p class="font-handwritten text-3xl sm:text-4xl md:text-5xl xl:text-6xl">{{ cat_name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-end px-4 mb-12">
+        <a href="{{ playlist_url }}"
+        class="
+            transition-all duration-150
+            justify-end
+            text-[#EFF0D1] font-medium text-sm md:text-xl
+            inline-block
+            bg-[#77BA99]
+            border-b-6 md:border-b-8 border-[#262730] focus:border-b-0.5
+            focus:translate-y-1 focus:md:translate-y-2 focus:mb-1 focus:md:mb-2
+            rounded-full
+            ms-8 md:ms-16 mt-5 md:mt-10 px-5 md:px-8 py-2
+        ">
+        open on Spotify
+        </a>
+    </div>
+{% endblock %}

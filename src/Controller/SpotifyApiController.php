@@ -6,12 +6,10 @@ namespace App\Controller;
 
 use App\Entity\Const\RouteName;
 use App\Entity\Const\RoutePath;
+use App\Enum\CatBackground;
 use App\Enum\CatColor;
 use App\Enum\CatHat;
 use App\Enum\CatType;
-use App\Form\CatColorType;
-use App\Form\CatElementChoiceType;
-use App\Form\ChooseFighterType;
 use App\Form\PlaylistCatNameType;
 use App\Service\DataService;
 use App\Service\FileService;
@@ -72,7 +70,7 @@ class SpotifyApiController extends AbstractController
             $data = $form->getData();
             // dd($data);
             // TODO create service method which will create new playlist
-            // $this->spotifyApiService->createCatPlaylist($request, $data['cat_name']);
+            $this->spotifyApiService->createCatPlaylist($request, $data['cat_name']);
 
             return $this->redirectToRoute(RouteName::APP_CHOOSE_YOUR_FIGHTER);
         }
@@ -115,9 +113,9 @@ class SpotifyApiController extends AbstractController
             $data  = $form->getData();
             $color = $this->dataService->getCatElementValue($data);
 
-            $request->getSession()->set('COLOR', $color);
+            $request->getSession()->set('CAT_COLOR', $color);
 
-            // $this->spotifyApiService->addTracksToPlaylist($request, CatColor::tryFrom($color)->toQuery());
+            $this->spotifyApiService->addTracksToPlaylist($request, CatColor::tryFrom($color)->toQuery());
             return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_HAT);
         }
 
@@ -138,9 +136,9 @@ class SpotifyApiController extends AbstractController
             $data = $form->getData();
             $hat  = $this->dataService->getCatElementValue($data);
 
-            $request->getSession()->set('HAT', $hat);
+            $request->getSession()->set('CAT_HAT', $hat);
 
-            $this->fileService->combineLayers($request);
+            return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_BACKGROUND);
         }
 
         return $this->render('elementSelection.html.twig', [
@@ -164,18 +162,51 @@ class SpotifyApiController extends AbstractController
     #[Route(path: RoutePath::CHOOSE_CAT_BACKGROUND, name: RouteName::APP_CHOOSE_CAT_BACKGROUND)]
     public function chooseCatBackground(Request $request): Response
     {
-        return $this->render('');
+        $form = $this->formService->createElementChoiceForm(CatBackground::cases());
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data       = $form->getData();
+            $background = $this->dataService->getCatElementValue($data);
+
+            $request->getSession()->set('CAT_BACKGROUND', $background);
+
+            $this->fileService->combineLayers($request);
+            $this->spotifyApiService->updatePlaylistCoverPhoto($request);
+
+            return $this->redirectToRoute(RouteName::APP_CAT_REVEAL);
+        }
+
+        return $this->render('elementSelection.html.twig', [
+            'subject' => 'background',
+            'form'    => $form
+        ]);
     }
 
     #[Route(path: RoutePath::CAT_REVEAL, name: RouteName::APP_CAT_REVEAL)]
     public function catReveal(Request $request): Response
     {
-        return $this->render('');
+        $session      = $request->getSession();
+        $catName      = $session->get('CAT_NAME');
+        $catPhotoName = $session->get('CAT_PHOTO_NAME');
+
+        return $this->render('catReveal.html.twig', [
+            'pill_text'      => sprintf('This is %s!', $catName),
+            'cat_name'       => $catName,
+            'cat_photo_path' => sprintf('images/cats/playlist_cover_download/%s.jpg', $catPhotoName),
+            'playlist_url'   => $this->spotifyApiService->getPlaylistUrl($request)
+        ]);
     }
 
     #[Route(path: RoutePath::CATS_GALLERY, name: RouteName::APP_CATS_GALLERY)]
     public function catsGallery(Request $request): Response
     {
-        return $this->render('');
+        $catsPlaylists = $this->spotifyApiService->getMewsickPlaylists($request);
+
+        return $this->render('catsGallery.html.twig', [
+            'pill_text' => 'Cats Gallery',
+            'playlists' => $catsPlaylists
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Entity\Const\RouteName;
 use App\Enum\CatColor;
 use App\Enum\CatType;
 use phpDocumentor\Reflection\PseudoTypes\LowercaseString;
+use ReflectionException;
 use Twig\Extension\RuntimeExtensionInterface;
 
 class BasicStuffExtensionRuntime implements RuntimeExtensionInterface
@@ -53,7 +54,7 @@ class BasicStuffExtensionRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * get cat element from reflection enum, subject must match enum name e.g. CatHat -> subject = hat
+     * get cat element from reflection enum, subject must match enum name e.g. CatHat -> subject = hat else use fully cualified name
      *
      * @param  int    $value
      * @param  string $subject
@@ -61,20 +62,34 @@ class BasicStuffExtensionRuntime implements RuntimeExtensionInterface
      */
     public function getCatElementName(int $value, string $subject): string
     {
-        $reflection = new \ReflectionEnum(sprintf('App\Enum\Cat%s', ucwords($subject)));
+        try {
+            if (!str_contains($subject, "\\")) {
+                $subject = sprintf('App\Enum\Cat%s', ucwords($subject));
+            }
 
-        return strtolower($reflection->getCases()[$value]->getName());
+            $reflection = new \ReflectionEnum($subject);
+
+            return strtolower($reflection->getCases()[$value]->getName());
+
+        } catch (ReflectionException) {
+
+            return 'Wrong Cat';
+        }
     }
 
     /**
      * retruns path to image dir
      *
-     * @param  string $catType
-     * @param  string $subject
+     * @param  string  $subject
+     * @param  ?string $catType
      * @return string
      */
-    public function getImageDirPath(string $catType, string $subject): string
+    public function getImageDirPath(string $subject, ?string $catType = null): string
     {
-        return sprintf('images/cat/%s/%s/', $catType, $subject);
+        if ($catType) {
+            return sprintf('images/cat/%s/%s/', $catType, $subject);
+        }
+
+        return sprintf('images/cat/%s/', $subject);
     }
 }
