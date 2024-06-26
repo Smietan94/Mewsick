@@ -25,8 +25,10 @@ class Constant
     public final const ARTIST_ID_FOR_TOKEN_VALIDATION = '10wjV72OetIdsUQEcjSnOd';
 
     // Api uris
-    public final const ACCESS_TOKEN_URL = 'https://accounts.spotify.com/api/token';
-    public final const SPOTIFY_API_URL  = 'https://api.spotify.com/v1';
+    public final const AUTHORIZATION_URL = 'https://accounts.spotify.com/pl/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=%s';
+    public final const ACCESS_TOKEN_URL  = 'https://accounts.spotify.com/api/token';
+    public final const SPOTIFY_API_URL   = 'https://api.spotify.com/v1';
 
+    // Prefix
     public final const SPOTIFY_PLAYLIST_PREFIX = 'Mewsick playlist by';
 }

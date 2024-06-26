@@ -70,7 +70,7 @@ class SpotifyApiController extends AbstractController
             $data = $form->getData();
             // dd($data);
             // TODO create service method which will create new playlist
-            $this->spotifyApiService->createCatPlaylist($request, $data['cat_name']);
+            $this->spotifyApiService->createCatPlaylist($data['cat_name']);
 
             return $this->redirectToRoute(RouteName::APP_CHOOSE_YOUR_FIGHTER);
         }
@@ -90,7 +90,7 @@ class SpotifyApiController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
 
-            $this->spotifyApiService->processCatTypeChoice($request, $data);
+            $this->spotifyApiService->processCatTypeChoice($data);
 
             return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_COLOR);
         }
@@ -115,7 +115,7 @@ class SpotifyApiController extends AbstractController
 
             $request->getSession()->set('CAT_COLOR', $color);
 
-            $this->spotifyApiService->addTracksToPlaylist($request, CatColor::tryFrom($color)->toQuery());
+            $this->spotifyApiService->addTracksToPlaylist(CatColor::tryFrom($color)->toQuery());
             return $this->redirectToRoute(RouteName::APP_CHOOSE_CAT_HAT);
         }
 
